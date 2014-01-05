@@ -7,14 +7,14 @@
 
 require 'binary_record'
 
-Dir["spec/support/**/*.rb"].each {|f| require f}
-Dir["spec/models/*.rb"].each { |f| load f}
-
 ActiveRecord::Base.establish_connection(
     :adapter => 'sqlite3', :database => ':memory:',
     :pool => 5, :timeout => 5000, :encoding => :utf8)
 
+Dir["spec/support/**/*.rb"].each {|f| require f}
 load 'spec/schemas/schema.rb'
+
+Dir["spec/models/*.rb"].each { |f| load f}
 
 RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true

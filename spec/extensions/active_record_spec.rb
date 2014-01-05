@@ -16,8 +16,6 @@ describe "Active Record Extensions" do
   end
 
   it 'writes out data' do
-    puts Int8Table.new(:field => '2').to_binary_s.inspect
-
     Int8Table.new(:field => '2').to_binary_s.should == "\x02"
   end
 end

@@ -5,7 +5,11 @@ require "binary_record/version"
 require "extensions/fixnum"
 require "extensions/active_record"
 
-Dir["validators/*"].each { |file| require file }
+puts 'x'
+Dir.chdir('lib') do
+  Dir["validators/*.rb"].each { |file| require file }
+end
+puts 'y'
 
 module BinaryRecord
   def self.included(klass)
@@ -32,6 +36,8 @@ module BinaryRecord
     def validates_binary(attribute_name, type, options = {})
       @klass.send type, attribute_name, options
 
+      self.validates attribute_name, type => true
+
       if options[:value]
         self.after_initialize do
           self.send "#{attribute_name}=", options[:value]
@@ -41,6 +47,12 @@ module BinaryRecord
       end
 
       @attrs << attribute_name
+    end
+
+    def endian(value)
+      @klass.send :endian,value
+    rescue
+      raise ArgumentError.new("Unknown value for endian #{value} in class #{self.name}")
     end
   end
 
