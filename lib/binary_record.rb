@@ -5,11 +5,9 @@ require "binary_record/version"
 require "extensions/fixnum"
 require "extensions/active_record"
 
-puts 'x'
 Dir.chdir('lib') do
   Dir["validators/*.rb"].each { |file| require file }
 end
-puts 'y'
 
 module BinaryRecord
   def self.included(klass)
@@ -54,6 +52,27 @@ module BinaryRecord
     rescue
       raise ArgumentError.new("Unknown value for endian #{value} in class #{self.name}")
     end
+
+    def read(text, instance=nil)
+      instance = self.new unless instance
+
+      binary_object = self.binary_class.read(text)
+
+      self._attrs.each do |attr|
+        value = binary_object.send(attr)
+
+        # convert back to a standard ruby string
+        # otherwise, save fails with confusing error message
+        if value.is_a? BinData::String or 
+           value.is_a? BinData::Stringz
+            value = String.new(value)
+        end
+
+        instance.send "#{attr}=", value
+      end
+
+      instance
+    end
   end
 
   def binary_attributes
@@ -81,6 +100,10 @@ module BinaryRecord
     raise "Cannot write binary on invalid record #{self.class}.\n#{self.errors.messages}" unless valid?
 
     to_binary_s
+  end
+
+  def read(text)
+    self.class.read(text, self)
   end
 
 end
