@@ -44,4 +44,8 @@ describe BinaryRecord do
     }.to raise_error(EOFError)
   end
 
+  it 'require presence of binary attribute' do
+    Int8Table.new.should_not be_valid
+  end
+
 end

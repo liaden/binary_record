@@ -34,7 +34,7 @@ module BinaryRecord
     def validates_binary(attribute_name, type, options = {})
       @klass.send type, attribute_name, options
 
-      self.validates attribute_name, type => true
+      self.validates attribute_name, type => true, :presence => true
 
       if options[:value]
         self.after_initialize do
