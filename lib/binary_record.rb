@@ -2,6 +2,7 @@ require "active_record"
 require "bindata"
 
 require "binary_record/version"
+require "binary_record/binary_attribute"
 require "extensions/fixnum"
 require "extensions/active_record"
 
@@ -15,7 +16,8 @@ module BinaryRecord
     klass.extend(PrivateClassMethods)
     
     klass.class_eval do
-       @attrs = []
+       @attrs = {}
+
        @klass = Class.new(::BinData::Record)
     end
   end
@@ -36,15 +38,16 @@ module BinaryRecord
 
       self.validates attribute_name, type => true, :presence => true
 
+      attribute = BinaryAttribute.field(attribute_name)
+      @attrs[attribute_name] = attribute
+
       if options[:value]
         self.after_initialize do
-          self.send "#{attribute_name}=", options[:value]
+          attribute.assign(self, options[:value])
         end
 
         self.validates_numeracality_of attribute_name, :equial_to => options[:value]
       end
-
-      @attrs << attribute_name
     end
 
     def endian(value)
@@ -53,22 +56,25 @@ module BinaryRecord
       raise ArgumentError.new("Unknown value for endian #{value} in class #{self.name}")
     end
 
+    def embedded_message(message_attribute, options = {})
+      validates message_attribute, :presence => true
+      belongs_to message_attribute, options
+
+      attribute = BinaryAttribute.embedded(message_attribute, options)
+      _attrs[message_attribute] = attribute
+
+      @klass.send :uint16, attribute.size_name
+      @klass.send :string, message_attribute, :read_length => attribute.size_name.to_sym
+    end
+
     def read(text, instance=nil)
       instance = self.new unless instance
 
-      binary_object = self.binary_class.read(text)
+      binary_object = self.binary_class.new 
+      binary_object.read(text) 
 
-      self._attrs.each do |attr|
-        value = binary_object.send(attr)
-
-        # convert back to a standard ruby string
-        # otherwise, save fails with confusing error message
-        if value.is_a? BinData::String or 
-           value.is_a? BinData::Stringz
-            value = String.new(value)
-        end
-
-        instance.send "#{attr}=", value
+      self._attrs.each do |attribute_name, attribute|
+        attribute.parse_value(binary_object, instance)
       end
 
       instance
@@ -78,7 +84,7 @@ module BinaryRecord
   def binary_attributes
     result = {}
     
-    self.class._attrs.each do |attr|
+    self.class._attrs.keys.each do |attr|
         result[attr] = self.send(attr)
     end
 
@@ -89,8 +95,8 @@ module BinaryRecord
     return nil unless valid?
 
     binary_object = self.class.binary_class.new
-    binary_attributes.keys.each do |attr|
-      binary_object.send "#{attr}=", self.send(attr)
+    self.class._attrs.each do |key, attribute|
+      attribute.write_value(binary_object, self)
     end
 
     binary_object.to_binary_s

@@ -42,5 +42,14 @@ ActiveRecord::Schema.define(:version => 20140105165633) do
     t.string :field
   end
 
+  create_table :embedded_message_fixed_types do |t|
+    t.integer :uint16_table_id
+  end
+
+  create_table :embedded_message_polymorphic_types do |t|
+    t.integer :my_message_id
+    t.string  :my_message_type
+  end
+
 end
 
