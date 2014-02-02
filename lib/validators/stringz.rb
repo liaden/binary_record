@@ -1,6 +1,6 @@
 class StringzValidator < ActiveModel::EachValidator
     def self.null_char_with_trailing_char_regex
-      /\0(.|\n)/
+      /\0[^\0]/
     end
 
     def validate_each(record, attribute, value)
@@ -12,4 +12,3 @@ class StringzValidator < ActiveModel::EachValidator
         end
     end
 end
-
