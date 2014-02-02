@@ -99,4 +99,28 @@ describe "validations" do
 
     it_behaves_like 'obeys min/max'
   end
+
+  describe 'stringz' do
+    it 'is valid without null terminator' do
+      StringzTable.new(:field => "hello world").should be_valid
+    end
+
+    it 'is valid with null terminators at end of string' do
+      StringzTable.new(:field => "hello world\x00\x00").should be_valid
+    end
+
+    it 'is invalid when null terminator is not at the end' do
+      StringzTable.new(:field => "hello\x00world").should_not be_valid
+    end
+  end
+
+  describe 'string' do
+    it 'is valid witih null terminators' do
+      String.new(:field => "\x00Hello\x00World\x00").should be_valid
+    end
+
+    it 'is valid without null terminators' do
+      String.new(:field => "Hello world").should be_valid
+    end
+  end
 end

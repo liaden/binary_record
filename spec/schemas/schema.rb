@@ -33,5 +33,14 @@ ActiveRecord::Schema.define(:version => 20140105165633) do
   create_table :uint64_tables do |t|
     t.integer :field, :limit => 8
   end
+
+  create_table :stringz_tables do |t|
+    t.string :field
+  end
+
+  create_table :string_tables do |t|
+    t.string :field
+  end
+
 end
 
