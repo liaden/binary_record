@@ -1,8 +1,12 @@
 class StringzValidator < ActiveModel::EachValidator
+    def self.null_char_with_trailing_char_regex
+      /\0(.|\n)/
+    end
+
     def validate_each(record, attribute, value)
         if value
-            null_instances = value.grep(/\0/)
-            if null_instances.size > 0
+            bad_null = value.match StringzValidator.null_char_with_trailing_char_regex
+            if bad_null
                 record.errors[attribute] = "Attribute #{attribute} has a null terminator in the middle of the string. Sent messages will parse wrong"
             end
         end

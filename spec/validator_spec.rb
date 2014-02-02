@@ -1,3 +1,4 @@
+require 'spec_helper'
 
 shared_examples 'obeys min/max' do
   it 'minimum is valid' do
@@ -112,15 +113,30 @@ describe "validations" do
     it 'is invalid when null terminator is not at the end' do
       StringzTable.new(:field => "hello\x00world").should_not be_valid
     end
+
+    describe 'specified regex' do
+      let(:regex) { StringzValidator.null_char_with_trailing_char_regex }
+      it "matches '\\0a'" do
+        regex.match("\0a").should_not be_nil
+      end
+
+      it "matches '\\0\\n'" do
+        regex.match("\0\n").should_not be_nil
+      end
+
+      it "does not match 'a\\0'" do
+        regex.match("a\0").should be_nil
+      end
+    end
   end
 
   describe 'string' do
     it 'is valid witih null terminators' do
-      String.new(:field => "\x00Hello\x00World\x00").should be_valid
+      StringTable.new(:field => "\x00Hello\x00World\x00").should be_valid
     end
 
     it 'is valid without null terminators' do
-      String.new(:field => "Hello world").should be_valid
+      StringTable.new(:field => "Hello world").should be_valid
     end
   end
 end
