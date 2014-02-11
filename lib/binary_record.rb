@@ -56,7 +56,7 @@ module BinaryRecord
       raise ArgumentError.new("Unknown value for endian #{value} in class #{self.name}")
     end
 
-    def embedded_message(message_attribute, options = {})
+    def embeds_message(message_attribute, options = {})
       validates message_attribute, :presence => true
       belongs_to message_attribute, options
 
