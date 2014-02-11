@@ -2,7 +2,9 @@ require "active_record"
 require "bindata"
 
 require "binary_record/version"
+require "binary_record/settings"
 require "binary_record/binary_attribute"
+
 require "extensions/fixnum"
 require "extensions/active_record"
 
