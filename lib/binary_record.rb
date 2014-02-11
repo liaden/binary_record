@@ -2,6 +2,8 @@ require "active_record"
 require "bindata"
 
 require "binary_record/version"
+require "binary_record/settings"
+
 require "extensions/fixnum"
 require "extensions/active_record"
 
