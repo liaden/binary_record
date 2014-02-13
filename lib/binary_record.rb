@@ -66,15 +66,16 @@ module BinaryRecord
 
       if polymorphic
         attribute = Attribute.polymorphic(message_attribute, options)
-        @klass.send :stringz, attribute.type_name
+        @klass.send :stringz, attribute.attr_name(:type)
       else
         attribute = Attribute.embedded(message_attribute, options)
       end
 
       _attrs[message_attribute] = attribute
 
-      @klass.send :uint16, attribute.size_name
-      @klass.send :string, message_attribute, :read_length => attribute.size_name.to_sym
+      attr_size_name = attribute.attr_name(:size)
+      @klass.send :uint16, attr_size_name
+      @klass.send :string, message_attribute, :read_length => attr_size_name.to_sym
     end
 
     def read(text, instance=nil)

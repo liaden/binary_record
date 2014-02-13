@@ -11,7 +11,6 @@ module BinaryRecord
     end
 
     def self.defaults
-      puts 'defaults'
       Defaults.new
     end
   
@@ -21,20 +20,16 @@ module BinaryRecord
       if block_given?
         yield @@config
       else
-        puts 'getting config'
-        puts @@config.inspect
         @@config
       end
     end
   
     def self.config=(value)
-      puts 'assigning'
       @@config = value
     end
   end
 
   def self.config(&block)
-    puts 'configing'
     Settings.config(&block)
   end
 

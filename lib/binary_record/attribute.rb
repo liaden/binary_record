@@ -1,7 +1,9 @@
 module BinaryRecord
   class Attribute
+    attr_reader :name 
+
     def initialize(attribute_name)
-      @attribute_name = attribute_name
+      @name = attribute_name
     end
 
     def self.embed_mechanism(options)
@@ -21,9 +23,11 @@ module BinaryRecord
 
     def self.embedded(attribute_name, options)
       class_name = options[:class_name] || attribute_name
+      klass = class_name.to_s.singularize.camelize.constantize
+
       attribute = Attribute.new(attribute_name)
       
-      attribute.instance_variable_set :@class_name, class_name
+      attribute.instance_variable_set :@parsing_class, klass
       attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
 
       attribute
@@ -41,37 +45,37 @@ module BinaryRecord
       not @store_type_as.nil?
     end
 
-    def size_name
-      "#{@attribute_name}_size"
-    end
-
-    def type_name
-      "#{@attribute_name}_type"
+    def attr_name(type)
+      "#{name}_#{type}"
     end
 
     def embedded_class_name(binary_object=nil)
       @class_name.to_s.singularize.camelize
     end
 
-    def value_from(object)
-      object.send(@attribute_name)
+    def parsing_class(binary_object)
+      if polymorphic?
+        klass_name = binary_object.send(attr_name(:type)).camelize
+        klass_name.constantize
+      else
+        @parsing_class
+      end
+    end
+
+    def lookup(object, attribute=nil)
+      attribute ||= name
+      object.send(attribute)
     end
 
     def assign(object, value, associated_attr = nil)
-      object.send("#{associated_attr || @attribute_name}=", value) 
+      object.send("#{associated_attr || name}=", value) 
     end
 
     def parse_value(binary_object, database_object)
       if embedded?
-        if polymorphic?
-          klass_name = binary_object.send(type_name).camelize
-        else
-          klass_name = embedded_class_name
-        end
-
-        value = klass_name.constantize.read(value_from(binary_object))
+        value = parsing_class(binary_object).read(lookup(binary_object))
       else
-        value = value_from(binary_object)
+        value = lookup(binary_object)
 
         if value.is_a? ::BinData::String or
            value.is_a? ::BinData::Stringz
@@ -85,25 +89,19 @@ module BinaryRecord
     def write_value(binary_object, database_object)
       if embedded?
 
-        embedded_text = value_from(database_object).to_binary_s
+        embedded_text = lookup(database_object).to_binary_s
 
         assign(binary_object, embedded_text)
-        assign(binary_object, embedded_text.size, size_name)
+        assign(binary_object, embedded_text.size, attr_name(:size))
 
         if polymorphic?
-          assign(binary_object, database_object.send(type_name),
-                 "#{@attribute_name}_type") 
+          attr_type_name = attr_name(:type)
+          type_identifier = lookup(database_object, attr_type_name)
+          assign(binary_object, type_identifier, attr_type_name)
         end
       else
-        assign(binary_object, value_from(database_object))
+        assign(binary_object, lookup(database_object))
       end
-    end
-
-    def parsing_class(binary_object)
-      result = @determine_parser.call(binary_object)
-
-      # if string, constantize it, otherwise function already returned class
-      result.try(:constantize) || result
     end
   end
 end
