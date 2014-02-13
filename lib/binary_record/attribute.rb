@@ -1,40 +1,19 @@
 module BinaryRecord
   class Attribute
-    attr_reader :name 
+    attr_reader :name
 
-    def initialize(attribute_name)
-      @name = attribute_name
+    def initialize(data)
+      data.each do |key, value|
+        self.instance_variable_set "@#{key}", value
+      end
     end
 
-    def self.embed_mechanism(options)
-      options[:embed_mechanism] || BinaryRecord.config.embed_mechanism 
+    def self.classify(item)
+      item.to_s.singularize.camelize.constantize
     end
 
-    def self.polymorphic(attribute_name, options)
-      
-      attribute = Attribute.new(attribute_name)
-
-      attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
-      attribute.instance_variable_set :@store_type_as,
-        options[:store_type_as] || BinaryRecord.config.store_type_as
-
-      attribute
-    end
-
-    def self.embedded(attribute_name, options)
-      class_name = options[:class_name] || attribute_name
-      klass = class_name.to_s.singularize.camelize.constantize
-
-      attribute = Attribute.new(attribute_name)
-      
-      attribute.instance_variable_set :@parsing_class, klass
-      attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
-
-      attribute
-    end
-
-    def self.field(attribute_name)
-      Attribute.new(attribute_name)
+    def self.polymorphic?(options)
+      polymorphic = options.key? :polymorphic
     end
 
     def embedded?
@@ -45,8 +24,12 @@ module BinaryRecord
       not @store_type_as.nil?
     end
 
-    def attr_name(type)
+    def self.attr_name(name, type)
       "#{name}_#{type}"
+    end
+
+    def attr_name(type)
+      Attribute.attr_name(name, type)
     end
 
     def embedded_class_name(binary_object=nil)

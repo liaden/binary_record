@@ -4,6 +4,7 @@ require "bindata"
 require "binary_record/version"
 require "binary_record/settings"
 require "binary_record/attribute"
+require "binary_record/attribute_builder"
 
 require "extensions/fixnum"
 require "extensions/active_record"
@@ -36,20 +37,9 @@ module BinaryRecord
     end
 
     def validates_binary(attribute_name, type, options = {})
-      @klass.send type, attribute_name, options
-
-      self.validates attribute_name, type => true, :presence => true
-
-      attribute = Attribute.field(attribute_name)
-      @attrs[attribute_name] = attribute
-
-      if options[:value]
-        self.after_initialize do
-          attribute.assign(self, options[:value])
-        end
-
-        self.validates_numeracality_of attribute_name, :equial_to => options[:value]
-      end
+      builder = AttributeBuilder.new(@klass, self)
+      attribute = builder.build(attribute_name, type, options)
+      _attrs[attribute_name] = attribute
     end
 
     def endian(value)
@@ -58,24 +48,10 @@ module BinaryRecord
       raise ArgumentError.new("Unknown value for endian #{value} in class #{self.name}")
     end
 
-    def embeds_message(message_attribute, options = {})
-      polymorphic = options.key? :polymorphic
-
-      validates message_attribute, :presence => true
-      belongs_to message_attribute, options
-
-      if polymorphic
-        attribute = Attribute.polymorphic(message_attribute, options)
-        @klass.send :stringz, attribute.attr_name(:type)
-      else
-        attribute = Attribute.embedded(message_attribute, options)
-      end
-
-      _attrs[message_attribute] = attribute
-
-      attr_size_name = attribute.attr_name(:size)
-      @klass.send :uint16, attr_size_name
-      @klass.send :string, message_attribute, :read_length => attr_size_name.to_sym
+    def embeds_message(attribute_name, options = {})
+      builder = AttributeBuilder.new(@klass, self)
+      attribute = builder.build_embedded(attribute_name, options)
+      _attrs[attribute_name] = attribute
     end
 
     def read(text, instance=nil)
@@ -122,5 +98,4 @@ module BinaryRecord
   def read(text)
     self.class.read(text, self)
   end
-
 end
