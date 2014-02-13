@@ -59,10 +59,18 @@ module BinaryRecord
     end
 
     def embeds_message(message_attribute, options = {})
+      polymorphic = options.key? :polymorphic
+
       validates message_attribute, :presence => true
       belongs_to message_attribute, options
 
-      attribute = BinaryAttribute.embedded(message_attribute, options)
+      if polymorphic
+        attribute = BinaryAttribute.polymorphic(message_attribute, options)
+        @klass.send :stringz, attribute.type_name
+      else
+        attribute = BinaryAttribute.embedded(message_attribute, options)
+      end
+
       _attrs[message_attribute] = attribute
 
       @klass.send :uint16, attribute.size_name

@@ -4,24 +4,27 @@ module BinaryRecord
       @attribute_name = attribute_name
     end
 
-    def self.polymorphic_embedded(attribute_name, options)
-      attribute = BinaryAttribute.new(attribute_name)
-      attribute.instance_variable_set :@polymorphic, true
-      attribute
+    def self.embed_mechanism(options)
+      options[:embed_mechanism] || BinaryRecord.config.embed_mechanism 
     end
 
-    def self.default_polymorphic_lookup
-      lambda do |binary_object, attribute_name|
-        binary_object.send("#{attribute_name}_type")
-      end
+    def self.polymorphic(attribute_name, options)
+      
+      attribute = BinaryAttribute.new(attribute_name)
+
+      attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
+      attribute.instance_variable_set :@store_type_as,
+        options[:store_type_as] || BinaryRecord.config.store_type_as
+
+      attribute
     end
 
     def self.embedded(attribute_name, options)
       class_name = options[:class_name] || attribute_name
       attribute = BinaryAttribute.new(attribute_name)
       
-      attribute.instance_variable_set :@embedded, true
       attribute.instance_variable_set :@class_name, class_name
+      attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
 
       attribute
     end
@@ -31,22 +34,23 @@ module BinaryRecord
     end
 
     def embedded?
-      @embedded || @polymorphic
+      not @embed_mechanism.nil?
     end
 
     def polymorphic?
-      @polymorphic
+      not @store_type_as.nil?
     end
 
     def size_name
       "#{@attribute_name}_size"
     end
 
-    def embedded_class_name
-      if polymorphic?
-      else
-        @class_name.to_s.singularize.camelize
-      end
+    def type_name
+      "#{@attribute_name}_type"
+    end
+
+    def embedded_class_name(binary_object=nil)
+      @class_name.to_s.singularize.camelize
     end
 
     def value_from(object)
@@ -59,8 +63,13 @@ module BinaryRecord
 
     def parse_value(binary_object, database_object)
       if embedded?
-        puts "embedded_class_name = #{embedded_class_name}"
-        value = embedded_class_name.constantize.read(value_from(binary_object))
+        if polymorphic?
+          klass_name = binary_object.send(type_name).camelize
+        else
+          klass_name = embedded_class_name
+        end
+
+        value = klass_name.constantize.read(value_from(binary_object))
       else
         value = value_from(binary_object)
 
@@ -80,6 +89,11 @@ module BinaryRecord
 
         assign(binary_object, embedded_text)
         assign(binary_object, embedded_text.size, size_name)
+
+        if polymorphic?
+          assign(binary_object, database_object.send(type_name),
+                 "#{@attribute_name}_type") 
+        end
       else
         assign(binary_object, value_from(database_object))
       end
