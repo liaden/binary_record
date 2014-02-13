@@ -3,7 +3,7 @@ require "bindata"
 
 require "binary_record/version"
 require "binary_record/settings"
-require "binary_record/binary_attribute"
+require "binary_record/attribute"
 
 require "extensions/fixnum"
 require "extensions/active_record"
@@ -40,7 +40,7 @@ module BinaryRecord
 
       self.validates attribute_name, type => true, :presence => true
 
-      attribute = BinaryAttribute.field(attribute_name)
+      attribute = Attribute.field(attribute_name)
       @attrs[attribute_name] = attribute
 
       if options[:value]
@@ -65,10 +65,10 @@ module BinaryRecord
       belongs_to message_attribute, options
 
       if polymorphic
-        attribute = BinaryAttribute.polymorphic(message_attribute, options)
+        attribute = Attribute.polymorphic(message_attribute, options)
         @klass.send :stringz, attribute.type_name
       else
-        attribute = BinaryAttribute.embedded(message_attribute, options)
+        attribute = Attribute.embedded(message_attribute, options)
       end
 
       _attrs[message_attribute] = attribute

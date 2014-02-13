@@ -1,5 +1,5 @@
 module BinaryRecord
-  class BinaryAttribute
+  class Attribute
     def initialize(attribute_name)
       @attribute_name = attribute_name
     end
@@ -10,7 +10,7 @@ module BinaryRecord
 
     def self.polymorphic(attribute_name, options)
       
-      attribute = BinaryAttribute.new(attribute_name)
+      attribute = Attribute.new(attribute_name)
 
       attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
       attribute.instance_variable_set :@store_type_as,
@@ -21,7 +21,7 @@ module BinaryRecord
 
     def self.embedded(attribute_name, options)
       class_name = options[:class_name] || attribute_name
-      attribute = BinaryAttribute.new(attribute_name)
+      attribute = Attribute.new(attribute_name)
       
       attribute.instance_variable_set :@class_name, class_name
       attribute.instance_variable_set :@embed_mechanism, embed_mechanism(options)
@@ -30,7 +30,7 @@ module BinaryRecord
     end
 
     def self.field(attribute_name)
-      BinaryAttribute.new(attribute_name)
+      Attribute.new(attribute_name)
     end
 
     def embedded?
