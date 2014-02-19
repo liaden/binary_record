@@ -18,6 +18,7 @@ Or install it yourself as:
 
 ## Usage
 
+To serialize:
 ``` ruby
 class Message < ActiveRecord::Base
   acts_as_serializable
@@ -42,12 +43,11 @@ Message.new(:field => 1000000000).to_binary_s
 
 # throws exception because message is not valid
 Message.new(:field => 1000000000).to_binary_s!
+
+# parse binary string into a new instance of message
+Message.read(binary_string) 
+
+# parse binary string into this instance of message
+message = Message.new
+message.read(binary_string)
 ```
-
-## Contributing
-
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
